@@ -1,6 +1,7 @@
 import sys
 import os
 
+#edit these on your own computer probably and then set it to git-ignore
 def get_data_dir():
 	#three cases: bash, windows, school mac
 	if sys.platform == 'linux':
