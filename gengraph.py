@@ -156,6 +156,7 @@ for i, phase in enumerate([1,2,3]):
                     ax=ax[i],n_boot=5000,palette=cpal,hue_order=['posgen','feargen'])
     sns.despine(ax=ax[i]);ax[i].legend_.remove()
     ax[i].set_xlim([0,1])
+    ax[i].set_ylim([0,1])
 
 #coefs & peak
 coefs = pd.concat([p.coefs,f.coefs])
