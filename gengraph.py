@@ -92,6 +92,32 @@ fig, ax = plt.subplots()
 sns.barplot(x='face',y='n_subs',data=fS,ax=ax,palette=fearpal)
 sns.despine(ax=ax)
 
+###########Subjective Face Ratings########
+def emo_ident(data,palette,fc=True):
+    sns.set_context('talk');sns.set_style('ticks')
+
+    if fc:
+        N_trials = 15
+        palette = [palette[0],palette[2]]
+    else: N_trials = 9
+
+    data['coded_response'] = data.response.astype(float) - 1 
+    data = data.groupby(['subject','face']).coded_response.sum() / N_trials
+    data = data.reset_index()
+    data = data.groupby(['face']).mean().reset_index()
+    fig, ax = plt.subplots()
+    sns.barplot(x='face',y='coded_response',data=data,palette=palette)
+    ax.set_ylim([0,1])
+    sns.despine(ax=ax)
+
+pgen = pd.read_csv('posgen_data.csv')
+pg_fc = pd.read_csv('pg_fc.csv')
+fgen = pd.read_csv('feargen_data.csv')
+fg_fc = pd.read_csv('fg_fc.csv')
+emo_ident(pgen,pospal,fc=False)
+emo_ident(pg_fc,pospal,fc=True)
+emo_ident(fgen,fearpal,fc=False)
+emo_ident(fg_fc,fearpal,fc=True)
 ##########Generalization####################
 
 def gengraph(data,palette):
@@ -112,10 +138,49 @@ def gengraph(data,palette):
             sns.stripplot(x='face',y=val,data=phase.query('phase == @p'),palette=palette,linewidth=2,edgecolor='black',size=8,ax=ax[i])
             sns.despine(ax=ax[i])
 
-pgen = pd.read_csv('posgen_data.csv')
-fgen = pd.read_csv('feargen_data.csv')
-
 gengraph(pgen,pospal)
 gengraph(fgen,fearpal)
 
+##########curve fitting##################
+sns.set_context('talk');sns.set_style('ticks')
+from curve_fit import *
+cpal = [pospal[2],fearpal[2]]
+p = pos_curve(exp='posgen')
+f = pos_curve(exp='feargen')
+curves = pd.concat([p.curves,f.curves])
+
+#curves
+fig, ax = plt.subplots(1,3)
+for i, phase in enumerate([1,2,3]):
+    sns.lineplot(x='face',y='scr_est',hue='exp',data=curves.query('phase == @phase'),
+                    ax=ax[i],n_boot=5000,palette=cpal,hue_order=['posgen','feargen'])
+    sns.despine(ax=ax[i]);ax[i].legend_.remove()
+    ax[i].set_xlim([0,1])
+
+#coefs & peak
+coefs = pd.concat([p.coefs,f.coefs])
+#seperate out the peaks and coefs
+Peak = coefs[coefs.coef == 'peak'].copy()
+Peak.est /= 100
+Peak.est = Peak.est.astype(float)
+coefs_ = coefs[coefs.coef != 'peak'].copy()
+
+#coefs
+fig, cax = plt.subplots(1,3)
+for i, phase in enumerate([1,2,3]):
+    sns.barplot(x='coef',y='est',hue='exp',data=coefs_.query('phase == @phase'),n_boot=5000,ax=cax[i],
+                capsize=0,palette=cpal)#,join=False,dodge=True,edgecolor='black')
+    # sns.stripplot(x='coef',y='est',hue='exp',data=coefs_.query('phase == @phase'),palette=cpal,
+    #                 ax=cax[i],linewidth=2,edgecolor='black',size=8,dodge=True)
+    sns.despine(ax=cax[i]);cax[i].legend_.remove()
+
+
+#peak
+fig, pax = plt.subplots(1,3)
+for i, phase in enumerate([1,2,3]):
+    sns.pointplot(x='coef',y='est',hue='exp',data=Peak.query('phase == @phase'),dodge=True,palette=cpal,n_boot=5000,
+                    ax=pax[i],join=False,capsize=.3)
+    sns.stripplot(x='coef',y='est',hue='exp',data=Peak.query('phase == @phase'),palette=cpal,
+                    ax=pax[i],linewidth=2,edgecolor='black',size=8,dodge=True)
+    sns.despine(ax=pax[i]);pax[i].legend_.remove()
 
