@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pingouin as pg
+from pg_config import *
+from scipy.stats import pearsonr
 
 pospal = sns.color_palette('mako_r',5)
 fearpal = sns.color_palette('hot_r',5)
@@ -147,8 +149,9 @@ from curve_fit import *
 cpal = [pospal[2],fearpal[2]]
 p = pos_curve(exp='posgen')
 f = pos_curve(exp='feargen')
-curves = pd.concat([p.curves,f.curves])
-
+curves = pd.concat([p.curves,f.curves]).reset_index(drop=True)
+curves.subject = curves.subject.astype(int)
+curves.phase = curves.phase.astype(int)
 #curves
 fig, ax = plt.subplots(1,3)
 for i, phase in enumerate([1,2,3]):
@@ -157,6 +160,31 @@ for i, phase in enumerate([1,2,3]):
     sns.despine(ax=ax[i]);ax[i].legend_.remove()
     ax[i].set_xlim([0,1])
     ax[i].set_ylim([0,1])
+
+def curve_corr(phase=0):
+    _comp = np.zeros((2,100))
+    for g, group in enumerate(curves.exp.unique()):
+        #choose which subs go into this iteration
+        subs = curves.subject[curves.phase == phase][curves.exp == group].unique()
+        _n = subs.shape[0]
+        _subs = np.random.choice(subs,_n)
+        _curves = np.zeros((_n,100))
+        for i, _s in enumerate(_subs):
+            _curves[i,:] = curves.scr_est[curves.subject == _s][curves.phase == phase][curves.exp == group].values
+        _comp[g,:] = _curves.mean(axis=0)
+    return np.arctanh(pearsonr(_comp[0],_comp[1])[0])
+
+def boot_curve_corr(n_boot=1000):
+    phases = curves.phase.unique()
+    _out = {}
+    for p, phase in enumerate(phases):
+        print(phase)
+        _out[phase] = np.zeros(n_boot)
+        for i in range(n_boot): 
+            _out[phase][i] = curve_corr(phase=phase)
+            if i != 0 and 100 % i == 0: print(i)
+    return _out
+
 
 #coefs & peak
 coefs = pd.concat([p.coefs,f.coefs])
