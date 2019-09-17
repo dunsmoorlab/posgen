@@ -3,14 +3,10 @@
 ## and experimental group
 
 ## installing lmer package
-<<<<<<< HEAD
-setwd("/Users/ach3377/Db_lpl/Dunsmoor Lab/posgen")
-#install.packages("lme4")
+#setwd("/Users/ach3377/Db_lpl/Dunsmoor Lab/posgen")
+setwd("C:/Users/ACH/Dropbox (LewPeaLab)/Dunsmoor Lab/posgen")
+library("lme4")
 library(lmtest)
-=======
-  
-  install.packages("lme4")
->>>>>>> 7732b5864fa791099e71ce4d2f3eec1be83b5df0
 
 ## parse that there data
 
