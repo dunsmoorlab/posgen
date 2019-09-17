@@ -5,7 +5,6 @@
 ## installing lmer package
 
 install.packages("lme4")
-library(lmtest)
 
 ## parse that there data
 
