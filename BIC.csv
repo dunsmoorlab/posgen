@@ -1,0 +1,13 @@
+﻿,,,Experiment 1,,
+,,full,1,2,3
+BIC,linear,,,,
+,second degree,,,,
+LLR,X2,,,,
+,P,,,,
+,,,,,
+,,,Experiment 2,,
+,,full,1,2,3
+BIC,linear,,,,
+,second degree,,,,
+LLR,X2,,,,
+,P,,,,
