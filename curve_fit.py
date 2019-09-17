@@ -53,12 +53,12 @@ class pos_curve():
                     c = np.nan
                     curve = np.repeat(np.nan,100)
                     maxima = np.nan
-
+                    print(sub,phase)
                 else:   
                     #fit a 2nd order polynomial to the data
                     # p = poly.Polynomial.fit(subdat.face,subdat.scr,2,domain=[0,1])
-                    p = curve_fit(binomial,subdat.face,subdat.scr,bounds=(
-                        (-np.inf,-np.inf,-np.inf),(0,np.inf,np.inf)) )
+                    p = curve_fit(binomial,subdat.face,subdat.scr)#,bounds=(
+                        #(-np.inf,-np.inf,-np.inf),(0,np.inf,np.inf)) )
 
                     #collect coef
                     a = p[0][0]

@@ -1,5 +1,6 @@
 import sys
 import os
+import seaborn as sns
 
 #edit these on your own computer probably and then set it to git-ignore
 def get_data_dir():
@@ -12,3 +13,6 @@ def get_data_dir():
 		return os.path.expanduser('~') + os.sep + 'Db_lpl/Dunsmoor Lab/posgen/'
 
 data_dir = get_data_dir()
+
+pospal = sns.color_palette('mako_r',5)
+fearpal = sns.color_palette('hot_r',5)
