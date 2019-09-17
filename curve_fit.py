@@ -47,32 +47,32 @@ class pos_curve():
                 subdat = self.data.loc[(sub,phase)].copy()
                 subdat = subdat.sort_values(by='face')
                 
-                if len(np.where(subdat.scr!=0)[0]) < 3:
-                    a = np.nan
-                    b = np.nan
-                    c = np.nan
-                    curve = np.repeat(np.nan,100)
-                    maxima = np.nan
-                    print(sub,phase)
-                else:   
-                    #fit a 2nd order polynomial to the data
-                    # p = poly.Polynomial.fit(subdat.face,subdat.scr,2,domain=[0,1])
-                    p = curve_fit(binomial,subdat.face,subdat.scr)#,bounds=(
-                        #(-np.inf,-np.inf,-np.inf),(0,np.inf,np.inf)) )
+                # if len(np.where(subdat.scr!=0)[0]) < 3:
+                #     a = np.nan
+                #     b = np.nan
+                #     c = np.nan
+                #     curve = np.repeat(np.nan,100)
+                #     maxima = np.nan
+                #     print(sub,phase)
+                # else:   
+                #fit a 2nd order polynomial to the data
+                # p = poly.Polynomial.fit(subdat.face,subdat.scr,2,domain=[0,1])
+                p = curve_fit(binomial,subdat.face,subdat.scr)#,bounds=(
+                    #(-np.inf,-np.inf,-np.inf),(0,np.inf,np.inf)) )
 
-                    #collect coef
-                    a = p[0][0]
-                    b = p[0][1]
-                    c = p[0][2]
+                #collect coef
+                a = p[0][0]
+                b = p[0][1]
+                c = p[0][2]
 
-                    #collect the predicted y values
-                    curve = binomial(self.facex,a,b,c)
-                    # curve = p.linspace()[1]
-                    
-                    #find the max value 
-                    maxima = np.where(curve == curve.max())[0][0]
-                    # maxima = -1*(b/(2*a)) # this vertex
+                #collect the predicted y values
+                curve = binomial(self.facex,a,b,c)
+                # curve = p.linspace()[1]
                 
+                #find the max value 
+                maxima = np.where(curve == curve.max())[0][0]
+                # maxima = -1*(b/(2*a)) # this vertex
+            
                 #save curve
                 self.curves.loc[(sub,phase),'scr_est'] = curve
                 #save the max and the curve coefs

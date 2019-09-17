@@ -146,44 +146,48 @@ gengraph(fgen,fearpal)
 ##########curve fitting##################
 sns.set_context('talk');sns.set_style('ticks')
 from curve_fit import *
+def curve_corr(data=curves,phase=0):
+    _comp = np.zeros((2,100))
+    for g, group in enumerate(data.index.unique(level='exp')):
+        #choose which subs go into this iteration
+        subs = data.loc[group].index.unique(level='subject')
+        #choose N samples as are in each group and compute the boostrap iteration mean
+        _comp[g,:] = np.array([ data.loc[(group, s, phase), 'scr_est'].values for s in np.random.choice(subs,len(subs))]).mean(axis=0)
+    return np.arctanh(pearsonr(_comp[0],_comp[1])[0])
+
+def boot_curve_corr(data=curves,n_boot=5000):
+    _out = {phase: [curve_corr(phase=phase) for i in range(n_boot)] for phase in data.index.unique(level='phase')}
+    return _out
+
 cpal = [pospal[2],fearpal[2]]
 p = pos_curve(exp='posgen')
 f = pos_curve(exp='feargen')
+desat_r = sns.desaturate('red',.8)
 curves = pd.concat([p.curves,f.curves]).reset_index(drop=True)
 curves.subject = curves.subject.astype(int)
 curves.phase = curves.phase.astype(int)
+r = boot_curve_corr(data=curves.set_index(['exp','subject','phase','face']).sort_index(),n_boot=5000)
 #curves
-fig, ax = plt.subplots(1,3)
+fig, ax = plt.subplots(2,3, gridspec_kw={'height_ratios':(.3,1),'hspace':.3})
 for i, phase in enumerate([1,2,3]):
+    #corr dists
+    sns.kdeplot(np.tanh(r[phase]),shade=True,color='grey', ax=ax[0,i])
+    ef = np.percentile(np.tanh(r[phase]),[2.5,97.5])
+    ax[0,i].hlines(0,ef[0],ef[1],color=desat_r,linewidth=2) #underline the 95% CI of effect in red
+    ef_mean = np.tanh(np.mean(r[phase])); ax[0,i].scatter(ef_mean,0,s=16,color=desat_r)
+    sns.despine(ax=ax[0,i],left=True)
+
+    #curves
     sns.lineplot(x='face',y='scr_est',hue='exp',data=curves.query('phase == @phase'),
-                    ax=ax[i],n_boot=5000,palette=cpal,hue_order=['posgen','feargen'])
-    sns.despine(ax=ax[i]);ax[i].legend_.remove()
-    ax[i].set_xlim([0,1])
-    ax[i].set_ylim([0,1])
+                    ax=ax[1,i],n_boot=5000,palette=cpal,hue_order=['posgen','feargen'])
+    sns.despine(ax=ax[1,i]);ax[1,i].legend_.remove()
+    ax[1,i].set_xlim([0,1])
+    ax[1,i].set_ylim([0,1])
 
-def curve_corr(phase=0):
-    _comp = np.zeros((2,100))
-    for g, group in enumerate(curves.exp.unique()):
-        #choose which subs go into this iteration
-        subs = curves.subject[curves.phase == phase][curves.exp == group].unique()
-        _n = subs.shape[0]
-        _subs = np.random.choice(subs,_n)
-        _curves = np.zeros((_n,100))
-        for i, _s in enumerate(_subs):
-            _curves[i,:] = curves.scr_est[curves.subject == _s][curves.phase == phase][curves.exp == group].values
-        _comp[g,:] = _curves.mean(axis=0)
-    return np.arctanh(pearsonr(_comp[0],_comp[1])[0])
 
-def boot_curve_corr(n_boot=1000):
-    phases = curves.phase.unique()
-    _out = {}
-    for p, phase in enumerate(phases):
-        print(phase)
-        _out[phase] = np.zeros(n_boot)
-        for i in range(n_boot): 
-            _out[phase][i] = curve_corr(phase=phase)
-            if i != 0 and 100 % i == 0: print(i)
-    return _out
+
+
+
 
 
 #coefs & peak

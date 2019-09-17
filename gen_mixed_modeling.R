@@ -3,19 +3,19 @@
 ## and experimental group
 
 ## installing lmer package
-
-install.packages("lme4")
+setwd("/Users/ach3377/Db_lpl/Dunsmoor Lab/posgen")
+#install.packages("lme4")
 library(lmtest)
 
 ## parse that there data
 
-pg<-read.csv("~/Desktop/Lab_Experiments/POSGEN/posgen/posgen_data.csv")
+pg<-read.csv("posgen_data.csv")
 
 pg_1 <- subset(pg, subset = phase == 1)
 pg_2 <- subset(pg,subset = phase == 2)
 pg_3 <- subset(pg,subset = phase == 3)
 
-fg<-read.csv("~/Desktop/Lab_Experiments/POSGEN/posgen/feargen_data.csv")
+fg<-read.csv("feargen_data.csv")
 
 fg_1 <- subset(fg, subset = phase == 1)
 fg_2 <- subset(fg,subset = phase == 2)
@@ -55,26 +55,34 @@ lm_fg_3_poly <- lmer(fg_3$scr~poly(fg_3$face,2)+(1|fg_3$sub), REML=FALSE)
 ## general trend of better poly fit for posgen, better
 ## linear fit for feargen
 
-summary(lm_pg_full)
-summary(lm_pg_full_poly)
+print(summary(lm_pg_full)$AICtab['BIC'])
+print(summary(lm_pg_full_poly)$AICtab['BIC'])
+lrtest(lm_pg_full_poly,lm_pg_full)
 
-summary(lm_pg_1)
-summary(lm_pg_1_poly)
+print(summary(lm_pg_1)$AICtab['BIC'])
+print(summary(lm_pg_1_poly)$AICtab['BIC'])
+lrtest(lm_pg_1_poly,lm_pg_1)
 
-summary(lm_pg_2)
-summary(lm_pg_2_poly)
+print(summary(lm_pg_2)$AICtab['BIC'])
+print(summary(lm_pg_2_poly)$AICtab['BIC'])
+lrtest(lm_pg_2_poly,lm_pg_2)
 
-summary(lm_pg_3)
-summary(lm_pg_3_poly)
+print(summary(lm_pg_3)$AICtab['BIC'])
+print(summary(lm_pg_3_poly)$AICtab['BIC'])
+lrtest(lm_pg_3_poly,lm_pg_3)
 
-summary(lm_fg_full)
-summary(lm_fg_full_poly)
+print(summary(lm_fg_full)$AICtab['BIC'])
+print(summary(lm_fg_full_poly)$AICtab['BIC'])
+lrtest(lm_fg_full_poly,lm_fg_full)
 
-summary(lm_fg_1)
-summary(lm_fg_1_poly)
+print(summary(lm_fg_1)$AICtab['BIC'])
+print(summary(lm_fg_1_poly)$AICtab['BIC'])
+lrtest(lm_fg_1_poly,lm_fg_1)
 
-summary(lm_fg_2)
-summary(lm_fg_2_poly)
+print(summary(lm_fg_2)$AICtab['BIC'])
+print(summary(lm_fg_2_poly)$AICtab['BIC'])
+lrtest(lm_fg_2_poly,lm_fg_2)
 
-summary(lm_fg_3)
-summary(lm_fg_3_poly)
+print(summary(lm_fg_3)$AICtab['BIC'])
+print(summary(lm_fg_3_poly)$AICtab['BIC'])
+lrtest(lm_fg_3_poly,lm_fg_3)
