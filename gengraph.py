@@ -6,6 +6,8 @@ import seaborn as sns
 import pingouin as pg
 from pg_config import *
 from scipy.stats import pearsonr
+from matplotlib.ticker import MultipleLocator, ScalarFormatter
+
 
 pospal = sns.color_palette('mako_r',5)
 fearpal = sns.color_palette('hot_r',5)
@@ -13,7 +15,6 @@ def boot_ef(diff,X,Y,data,palette):
     sns.set_context('talk');sns.set_style('ticks')
     ef, ef_dist = pg.compute_bootci(x=diff,func='mean',method='cper',
                             confidence=.95,n_boot=5000,decimals=4,seed=42,return_dist=True)
-    
     fig, ax = plt.subplots(1,2,sharey=True) #graph
     # sns.pointplot(x=X,y=Y,data=data,join=False,ax=ax[0],
     #               color='black',capsize=.3,nboot=5000) #means
@@ -22,15 +23,28 @@ def boot_ef(diff,X,Y,data,palette):
                   palette=[palette[2]]) #swarmplot
     sns.kdeplot(ef_dist,shade=True,color='grey',vertical=True,ax=ax[1]) #effect size
     
-    xdraw = ax[1].get_xlim()[1] / 2 #how far to draw horizontal lines (for editing in illustrator)
     desat_r = sns.desaturate('red',.8)
     ax[1].vlines(0,ef[0],ef[1],color=desat_r,linewidth=2) #underline the 95% CI of effect in red
     y2 = ef_dist.mean(); ax[1].scatter(0,y2,s=16,color=desat_r) #draw line for mean effect
-    x2 = ax[1].get_xlim(); ax[1].hlines(0,x2[0],x2[1],color='grey',linestyle='--') #draw line at 0 effect
-    
-    sns.despine(ax=ax[0]); sns.despine(ax=ax[1],left=True,right=True) #despine the plots for aesthetics
+    for a in ax:
+        xl = a.get_xlim(); a.hlines(0,xl[0],xl[1],color='grey',linestyle='--') #draw line at 0 effect
 
+
+    sns.despine(ax=ax[0]); sns.despine(ax=ax[1],left=True,right=True) #despine the plots for aesthetics
     ax[1].set_title('%s 95 CI = %s'%(Y,ef))
+    
+    #make the ticks look better
+    ticks = {'scr':[.2,.1,-.2,1],
+             'rt' :[150,75,-600,300]}
+    
+    ax[0].set_ylim(ticks[val][-2],ticks[val][-1])
+    ax[0].yaxis.set_major_locator(MultipleLocator(ticks[val][0]))
+    ax[0].yaxis.set_minor_locator(MultipleLocator(ticks[val][1]))
+
+    if palette == pospal: out = 'pg'
+    else: out = 'fg'
+    plt.savefig(os.path.join(data_dir,'plots','%s_%s_diff.eps'%(out,val)),format='eps')
+
 
 pfc = pd.read_csv('pg_fc.csv').groupby(['subject','face']).mean().reset_index()
 pdiff = pd.DataFrame({'scr':pfc.scr[pfc.face == .55].values - pfc.scr[pfc.face == .11].values,
@@ -48,7 +62,7 @@ def two_samp_comp(T,C,X,Y,data,palette):
     sns.set_context('talk');sns.set_style('ticks')
     ef, ef_dist = pg.compute_bootci(x=T,y=C,func='mean',method='cper',
                             confidence=.95,n_boot=5000,decimals=4,seed=42,return_dist=True)
-    
+
     ybias = T.mean() - ef_dist.mean() #calculate how much to shift up the effect for graphing
     plot_ef, plot_dist = ef + ybias, ef_dist + ybias
 
@@ -94,6 +108,15 @@ fig, ax = plt.subplots()
 sns.barplot(x='face',y='n_subs',data=fS,ax=ax,palette=fearpal)
 sns.despine(ax=ax)
 
+sns.set_context('talk');sns.set_style('ticks')
+fig, ax = plt.subplots()
+sns.pointplot(x='face',y='n_subs',hue='exp',data=select,ax=ax,
+    palette=[pospal[2],fearpal[2]],markers=['o','s'],dodge=True)
+sns.despine(ax=ax)
+ax.legend_.remove()
+ax.set_ylim(0,13)
+ax.yaxis.set_major_locator(MultipleLocator(4))
+ax.yaxis.set_minor_locator(MultipleLocator(2))
 ###########Subjective Face Ratings########
 def emo_ident(data,palette,fc=True):
     sns.set_context('talk');sns.set_style('ticks')
@@ -125,6 +148,9 @@ emo_ident(fg_fc,fearpal,fc=True)
 def gengraph(data,palette):
     sns.set_context('talk');sns.set_style('ticks')
     
+    ticks = {'scr':[.4,.2,-.1,1.8],
+             'rt' :[500,250,400,2500]}
+    
     face = data.groupby(['subject','face']).mean().reset_index()
     for val in ['scr','rt']:
         fig, ax = plt.subplots()
@@ -132,16 +158,101 @@ def gengraph(data,palette):
         sns.swarmplot(x='face',y=val,data=face,palette=palette,ax=ax,linewidth=2,edgecolor='black',size=8)
         sns.despine(ax=ax)
 
-    phase = data.groupby(['subject','face','phase']).mean().reset_index()
-    for val in ['scr','rt']:
-        fig, ax = plt.subplots(1,3,sharey=True)
-        for i, p in enumerate([1,2,3]):
-            sns.pointplot(x='face',y=val,data=phase.query('phase == @p'),join=False,capsize=.3,nboot=5000,color='black',ax=ax[i])
-            sns.stripplot(x='face',y=val,data=phase.query('phase == @p'),palette=palette,linewidth=2,edgecolor='black',size=8,ax=ax[i])
-            sns.despine(ax=ax[i])
+        ax.set_ylim(ticks[val][-2],ticks[val][-1])
+        ax.yaxis.set_major_locator(MultipleLocator(ticks[val][0]))
+        ax.yaxis.set_minor_locator(MultipleLocator(ticks[val][1]))
+        if palette == pospal:out = 'pg'
+        else:out = 'fg'
+        plt.savefig(os.path.join(data_dir,'plots','%s_gen_%s.eps'%(out,val)),format='eps')
+
+
+    # phase = data.groupby(['subject','face','phase']).mean().reset_index()
+    # for val in ['scr','rt']:
+    #     fig, ax = plt.subplots(1,3,sharey=True)
+    #     for i, p in enumerate([1,2,3]):
+    #         sns.pointplot(x='face',y=val,data=phase.query('phase == @p'),join=False,capsize=.3,nboot=5000,color='black',ax=ax[i])
+    #         sns.stripplot(x='face',y=val,data=phase.query('phase == @p'),palette=palette,linewidth=2,edgecolor='black',size=8,ax=ax[i])
+    #         sns.despine(ax=ax[i])
+
+    # ax[0].set_ylim(ticks[val][-2],ticks[val][-1])
+    # ax[0].yaxis.set_major_locator(MultipleLocator(ticks[val][0]))
+    # ax[0].yaxis.set_minor_locator(MultipleLocator(ticks[val][1]))
 
 gengraph(pgen,pospal)
 gengraph(fgen,fearpal)
+
+##########fear conditioning cs split############
+def split_fear(Y,data,palette):
+    X='face'
+    sns.set_context('talk');sns.set_style('ticks')
+    
+    diff = data[Y][data.face == .55].values - data[Y][data.face == .11].values
+    ef, ef_dist = pg.compute_bootci(x=diff,func='mean',method='cper',
+                            confidence=.95,n_boot=5000,decimals=4,seed=42,return_dist=True)
+    ef += data[Y][data.face == .55].mean() - ef_dist.mean()
+    ef_dist += data[Y][data.face == .55].mean()- ef_dist.mean()
+    Y2 = data[Y][data.face == .11].mean()
+    fig, ax = plt.subplots(1,2,sharey=True) #graph
+    sns.swarmplot(x=X,y=Y,data=data,ax=ax[1],order=[.11,.55],
+                  linewidth=2,edgecolor='black',size=8,
+                  palette=[palette[0],palette[2]]) #swarmplot
+    sns.pointplot(x='face',y=val,data=data,join=False,capsize=.3,nboot=5000,color='black',seed=42,
+                    order=[.11,.55])
+
+    sns.kdeplot(ef_dist,shade=True,color='grey',vertical=True,ax=ax[0]) #effect size
+    
+    desat_r = sns.desaturate('red',.8)
+    ax[0].vlines(0,ef[0],ef[1],color=desat_r,linewidth=2) #underline the 95% CI of effect in red
+    y2 = ef_dist.mean(); ax[0].scatter(0,y2,s=16,color=desat_r) #draw line for mean effect
+    for a in ax:
+        xl = a.get_xlim(); a.hlines(Y2,xl[0],xl[1],color='grey',linestyle='--') #draw line at 0 effect
+
+
+    sns.despine(ax=ax[0]); sns.despine(ax=ax[1],left=True,right=True) #despine the plots for aesthetics
+    # ax[1].set_title('%s 95 CI = %s'%(Y,ef))
+    
+    # #make the ticks look better
+    ticks = {'scr':[.4,.2,-.1,1.8],
+             'rt' :[500,250,400,2500]}
+    
+    ax[0].set_ylim(ticks[Y][-2],ticks[Y][-1])
+    ax[0].yaxis.set_major_locator(MultipleLocator(ticks[Y][0]))
+    ax[0].yaxis.set_minor_locator(MultipleLocator(ticks[Y][1]))
+    
+    if palette == pospal: out = 'pg'
+    else: out = 'fg'
+    plt.savefig(os.path.join(data_dir,'plots','%s_%s_split_fear.eps'%(out,val)),format='eps')
+
+for val in ['scr','rt']: split_fear(val,pfc,pospal)
+for val in ['scr','rt']: split_fear(val,ffc,fearpal)
+##########generlization with both groups##############
+
+pgen = pd.read_csv('posgen_data.csv')
+fgen = pd.read_csv('feargen_data.csv')
+fgen.subject += 100
+gendat = pd.concat([pgen,fgen])
+gendat.face = gendat.face.round(1)
+def group_generalization(data):
+    sns.set_context('talk');sns.set_style('ticks')
+
+    ticks = {'scr':[.4,.2,0,1.2],
+         'rt' :[500,250,400,2500]}
+
+    data = data.groupby(['subject','face','phase']).mean().reset_index()
+    data['group'] = data.subject.apply(lambda x: 'pos' if x < 100 else 'fear')    
+    for val in ['scr','rt']:
+        fig, ax = plt.subplots(1,3,sharey=True)
+        for i, p in enumerate([1,2,3]):
+            sns.pointplot(x='face',y=val,hue='group',data=data.query('phase == @p'),
+                        join=True,capsize=.3,nboot=5000,ax=ax[i],dodge=True,
+                        palette=[pospal[2],fearpal[2]],markers=['o','s'])
+            sns.despine(ax=ax[i])
+
+            ax[i].legend_.remove()
+
+            ax[i].set_ylim(ticks[val][-2],ticks[val][-1])
+            ax[i].yaxis.set_major_locator(MultipleLocator(ticks[val][0]))
+            ax[i].yaxis.set_minor_locator(MultipleLocator(ticks[val][1]))
 
 ##########curve fitting##################
 sns.set_context('talk');sns.set_style('ticks')
@@ -217,3 +328,55 @@ for i, phase in enumerate([1,2,3]):
                     ax=pax[i],linewidth=2,edgecolor='black',size=8,dodge=True)
     sns.despine(ax=pax[i]);pax[i].legend_.remove()
 
+
+#conditioning by trial=
+pfc = pd.read_csv('pg_fc.csv')
+ffc = pd.read_csv('fg_fc.csv')
+
+pfc['group'] = 'pos'
+ffc['group'] = 'fear'
+
+fc = pd.concat([pfc,ffc])
+
+fc['group_face'] = fc.face.astype(str) + '_' + fc.group
+
+# def lazy_convert(x):
+#     if x <= 3: return 1
+#     elif x <= 6: return 2
+#     elif x <= 9: return 3
+#     elif x <= 12: return 4
+#     elif x <= 15: return 5
+#     elif x <= 18: return 6
+#     elif x <= 21: return 7
+#     elif x <= 24: return 8
+#     elif x <= 27: return 9
+#     elif x <= 30: return 10
+
+def lazy_convert(x):
+    if x <= 5: return 1
+    elif x <= 10: return 2
+    elif x <= 15: return 3
+    elif x <= 20: return 4
+    elif x <= 25: return 5
+    elif x <= 30: return 6
+fc['block'] = fc.trial.apply(lazy_convert)
+
+mixedpal = [pospal[2],pospal[2],fearpal[2],fearpal[2]]
+lines = [':','-',':','-']
+
+for y in ['scr','rt']:
+
+    sns.set_context('paper');sns.set_style('ticks')
+    fig, ax = plt.subplots()
+    sns.pointplot(data=fc,x='block',y=y,hue='group_face',dodge=True,
+                    linestyles=lines,palette=mixedpal,ax=ax,
+                    markers=['o','o','s','s'])
+    sns.despine(ax=ax)
+    ax.legend_.remove()
+    if y == 'scr':
+        ax.set_ylim(0,1.6)
+        ax.yaxis.set_major_locator(MultipleLocator(.2))
+        ax.yaxis.set_minor_locator(MultipleLocator(.1))
+    elif y == 'rt':
+        ax.yaxis.set_major_locator(MultipleLocator(100))
+        ax.yaxis.set_minor_locator(MultipleLocator(50))
